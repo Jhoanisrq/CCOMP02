@@ -7,21 +7,25 @@ void cambio(int*p,int*u){
     *u=temp;
 }
 int main(){
-    int A[][3]={{1,8,5},{7,2,0},{3,4,6}};
+    int A[][3]={{1,7,5},{8,2,0},{3,4,6}};  //1 7 5 8 2 0 3 4 6
     int C[][3]={{},{},{}};
+    int*finc=*C+(3*3);
     int(*fil)[3]=A;
     int*col=*A;
     int*pc=*A;
     int*ini=*A-1;
     int*fin=*A+(3*3);
     int r=1;
+    cout<<"Asi seria la tabla de 3x3 ordenada: "<<endl;
     for(int(*p)[3]=C;p<C+3;p++){
         for(int*q=*p;q<*(p+1);q++,r++){
             *q=r;
-            if(r==*fin-1){
+            if(q==finc-1){
                 *q=0;
             }
+            cout<<*q<<"\t";
         }
+        cout<<endl;
     }
     cout<<"Ordene la tabla de 3x3 tu eres 0: "<<endl;
     //Imprime y me da la ubicación de 0
@@ -35,41 +39,45 @@ int main(){
         }
         cout<<endl;
     }
-    int i=1;
     char mov;
-    while(i !=0){
+    while(true){
         cout<<"Moverte a izq(a/A), derecha(d/D), arriba(w/W), abajo(s/S): ";
         cin>>mov;
+        cout<<endl;
 
-        int ubicfilcol = *fil-col;
+        int ubiccol = col-*fil;
 
         //mover a la izquierda (a/A)
         if(mov=='a'||mov=='A'){
-            if (ubicfilcol > 0) {
+            if (ubiccol > 0){
                 pc = col - 1;
-                cambio(pc, col);
-            }else{cout<<"NO puede moverse más a la izquierda"<<endl;}
+                if (pc>ini){
+                    cambio(pc,col);
+                }
+            }else{cout<<"¡NO puede moverse más a la izquierda!"<<endl;}
         }
         //mover a la derecha(d/D)
         if(mov=='d'||mov=='D'){
-            if(ubicfilcol < 2){
+            if(ubiccol < 2){
                 pc=col+1;
-                cambio(pc,col);
-            }else{cout<<"NO puede moverse más a la derecha"<<endl;}
+                if(pc<fin){
+                    cambio(pc,col);
+                }
+            }else{cout<<"¡NO puede moverse más a la derecha!"<<endl;}
         }
         //mover arriba(w/W)
         if(mov=='w'||mov=='W'){
             pc=col-3;
             if(pc>ini){
                 cambio(pc,col);
-            }else{cout<<"NO puede moverse más arriba"<<endl;}
+            }else{cout<<"¡NO puede moverse más arriba!"<<endl;}
         }
         //mover abajo(s/S)
         if(mov=='s'||mov=='S'){
             pc=col+3;
             if(pc<fin){
                 cambio(pc,col);
-            }else{cout<<"NO puede moverse más abajo"<<endl;}
+            }else{cout<<"¡NO puede moverse más abajo!"<<endl;}
         }
         for(int(*p)[3]=A;p<A+3;p++){
             for(int*q=*p;q<*(p+1);q++){
@@ -81,14 +89,22 @@ int main(){
             }
             cout<<endl;
         }
-        if(A==C){
-            cout<<"TERMINO";
-            i--;
+        //comparar A==C
+        bool terminar=true;
+        int*c=*C;
+        for(int*a=*A;a<fin;a++){
+            if(*a!=*c){
+                terminar=false;
+            }
+            if(c<finc){
+                c++;
+            }
         }
+        if(terminar){
+            cout<<"¡Felicidades! Ya lo ordenaste \n";
+            break;
+        } 
     }
-    /*
-    preguntar para donde se va a mover0
-    verificar si ya esta ordenado
-    */  
+    
     return 0;
 }

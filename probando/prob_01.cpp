@@ -37,8 +37,9 @@ void float_a_IEEE754(float num,int*sig,int*expi,int*signi) {
     for (int j = 0; j < 8; ++j) {
         *(expi + j) = exponente[j] - '0';
     }
+    signi[0] = 1;
     for (int j = 0; j < 23 ; ++j) {
-        *(signi+j+1) = significando[j] - '0';
+        signi[j+1] = significando[j] - '0';
     }
 
 }
@@ -135,26 +136,40 @@ void resta(int*iA,int*fA,int*iM,int*fM,int*q_0){
     invertir(iM,fM);
 }
 
-void left_shift(int*iA,int*fA,int*iQ,int*fQ){
-    int ini=*fQ;
-    int temp=0;
-    int atr=0;
-    for(int*u=fQ;u>=iQ;u--){
-        if(u>=fQ-1){
-            if(u==fQ-1){atr=*u;}
-            if(ini==0){*u=0;}
-            else if(ini==1){*u=1;}
-        }else{
-            temp=atr;
-            atr=*u;
-            *u=temp;
+void left_shift(int* Ai, int* Af, int* Qi, int* Qf) {
+    for (int i = 23; i > 0; --i) {
+        Ai[i] = Ai[i - 1];
+    }
+    Ai[0] = Qi[0];
+
+    for (int i = 23; i > 0; --i) {
+        Qi[i] = Qi[i - 1];
+    }
+    Qi[0] = 0;
+}
+void normalizar(int* A, int* Ai, int* Af, int* expi, int* expf) {
+    while (A[0] == 0) {
+        for (int i = 0; i < 24; ++i) {
+            A[i] = A[i + 1];
+        }
+        A[23] = 0;
+
+        int one[8] = {0,0,0,0,0,0,0,1};
+        int* onei = one;
+        int* onef = one + 7;
+        int dummy = 0;
+        resta(expi, expf, onei, onef, &dummy); // exponente--
+    }
+}
+void redondear(int* A) {
+    if (A[24] == 1) { // guard bit
+        int carry = 1;
+        for (int i = 23; i >= 0 && carry; --i) {
+            int sum = A[i] + carry;
+            A[i] = sum % 2;
+            carry = sum / 2;
         }
     }
-    for(int*q=fA;q>=iA;q--){
-        temp=atr;
-        atr=*q;
-        *q=temp;
-    }    
 }
 int main() {
     float num01;
@@ -164,22 +179,22 @@ int main() {
     int*biasf=bias+7;
     int Q_0=0;
     int*q_0=&Q_0;
-    int carry=0; //evitar errores en resta
+    int carry=0; 
     int*car=&carry;
     int ExpUnderf[8]={0,0,0,0,0,0,0,0};
     int ExpOverf[8]={1,1,1,1,1,1,1,1};
     
-    int A[32]={0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+    int A[24]={0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
     int*Ai=A;
-    int*Af=A+31;
+    int*Af=A+23;
 
     int Sig1;
     int Exp1[8]={};
-    int Sign1[32]={1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+    int Sign1[24]={0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
     
     int Sig2;
     int Exp2[8]={};
-    int Sign2[32]={1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+    int Sign2[24]={0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
     
     int*sig1=&Sig1;
     int*sig2=&Sig2;
@@ -191,8 +206,8 @@ int main() {
 
     int*sign1i=Sign1;
     int*sign2i=Sign2;
-    int*sign1f=Sign1+31;
-    int*sign2f=Sign2+31;
+    int*sign1f=Sign1+23;
+    int*sign2f=Sign2+23;
     
     cout<<"Ingrese 2 números decimales, de tal forma que x/y resulte en una respuesta "<<endl;
     cout<<"Ingresa un número decimal como 3.6(x): ";
@@ -227,42 +242,42 @@ int main() {
         suma(exp1i,exp1f,biasi,biasf);
 
         bool esOverflow = true;
-        for (int i = 0; i < 8; i++) {
-            if (Exp1[i] != ExpOverf[i]) {
-                esOverflow = false;
-                break;
-            }
-        }
         bool esUnderflow = true;
         for (int i = 0; i < 8; i++) {
-            if (Exp1[i] != ExpUnderf[i]) {
-                esUnderflow = false;
-                break;
-            }
+            if (Exp1[i] != ExpOverf[i]) esOverflow = false;
+            if (Exp1[i] != ExpUnderf[i]) esUnderflow = false;
         }
-        if(esOverflow){
-            cout<<"Se a detectado Overflow";
-        }        
-        else if(esUnderflow){
-            cout<<"Se a detectado Underflow";
-        }
+
+        if(esOverflow){ cout<<"Se a detectado Overflow"; }
+        else if(esUnderflow){ cout<<"Se a detectado Underflow"; }
         else{//significandos Q/M  sign1/sign2
-            for(int i=23;i>0;i--){
-                left_shift(Ai,Af,sign1i,sign1f);
-                resta(Ai,Af,sign2i,sign2f,q_0);
-                *sign1f=Q_0;
-                if(Q_0==0){
-                    suma(Ai,Af,sign2i,sign2f);
+            int cociente[25] = {}; // 24 bits + 1 extra para redondeo
+            int* Qi = cociente;
+            int* Qf = cociente + 24;
+
+            for (int i = 0; i < 24; ++i) {
+                // Desplaza antes de restar
+                left_shift(Ai, Af, Qi, Qf);
+                resta(Ai, Af, sign2i, sign2f, q_0);
+            
+                if (Q_0 == 0) {
+                    // resta fue negativa, restauramos A
+                    suma(Ai, Af, sign2i, sign2f);
+                    Qi[0] = 0;
+                } else {
+                    Qi[0] = 1;
                 }
             }
-            cout<<signoR<<" ";
-            for(int*i=Exp1;i<=exp1f;i++){
-                cout <<*i;
-            }
-            cout<<" ";
-            for(int*a=A;a<=Af;a++){
-                cout <<*a;
-            }
+
+            // Normalizamos y redondeamos el cociente
+            normalizar(cociente, cociente, cociente + 23, exp1i, exp1f);
+            redondear(cociente);
+
+            // Mostramos resultado
+            cout << signoR << " ";
+            for (int* i = Exp1; i <= exp1f; i++) cout << *i;
+            cout << " ";
+            for (int i = 0; i < 23; ++i) cout << cociente[i];
         }
     }
     return 0;
